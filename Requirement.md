@@ -30,8 +30,6 @@ Based on the collected data, the system provides daily, monthly, and seasonal re
 - Track estimated earnings based on current tea and hazelnut market prices.
 - Provide a simple and user-friendly mobile interface for producers.
 
-> **Design Note:** Predefined/customizable sack type definitions were removed from the final design in favor of direct sack weight and count entry at the time of each harvest record to simplify data entry.
-
 ---
 
 ## 3. Users
