@@ -25,10 +25,10 @@ Based on the collected data, the system will provide daily, monthly, and seasona
 This application is designed for tea and hazelnut producers who want to track their daily harvest amounts, expenses, and profit analyses. Users will be able to record production data using different measurement units and monitor their financial performance through detailed reports.
 
 # Functional Requirements
-|                Title|Short Description|
-|----------------|-------------------------------|-----------------------------|
+               Title|Short Description|
+
 |1-Daily Harvest Management        |The system shall allow users to create, view, edit, and delete daily tea and hazelnut harvest records.            |
-|2-Multiple Measurement Unit Support         |`Users can enter harvest amounts using sacks, kilograms, and grams.            |"Isn't this fun?"            |
+|2-Multiple Measurement Unit Support         |`Users can enter harvest amounts using sacks, kilograms, and grams.          
 |3-Automatic Weight Calculation         |The system can automatically calculate the total weight from different measurement units.|
 |4-Expense Management         |The system shall allow users to create, view, edit, and delete operational expense records, including transportation, fuel, labor, market, and other expenses.
 |5-Transportation Cost Calculation |The system can calculate transportation costs based on traveled distance and cost per kilometer.
