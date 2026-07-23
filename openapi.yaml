@@ -1,0 +1,969 @@
+openapi: 3.0.3
+
+info:
+  title: Tea and Hazelnut Harvest and Finance Management System - API
+  version: 1.2.0
+  description: >
+    API design for tea and hazelnut producers to manage their seasons,
+    harvest records, expenses, and sales. Kept simple for users aged 60+:
+    no authentication/login is required, and predefined sack types have
+    been removed in favor of direct input.
+
+servers:
+  - url: http://localhost:8080/api
+    description: Local development server
+
+paths:
+  # ==========================================================
+  # SEASONS
+  # ==========================================================
+  /seasons:
+    post:
+      summary: Creates a new season
+      operationId: createSeason
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeasonRequest'
+            examples:
+              completedSeason:
+                summary: Season with a known end date
+                value:
+                  seasonName: 2025 First Flush Tea Season
+                  productType: TEA
+                  startDate: 01.05.2025
+                  endDate: 30.09.2025
+              activeSeason:
+                summary: Season with no known end date yet
+                value:
+                  seasonName: 2026 Hazelnut Season
+                  productType: HAZELNUT
+                  startDate: 01.08.2026
+                  endDate: null
+      responses:
+        '201':
+          description: Season created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeasonResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+    get:
+      summary: Lists all seasons for the user
+      operationId: getAllSeasons
+      responses:
+        '200':
+          description: Seasons retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SeasonResponse'
+              example:
+                - id: 12
+                  seasonName: 2025 First Flush Tea Season
+                  productType: TEA
+                  startDate: 01.05.2025
+                  endDate: 30.09.2025
+                - id: 13
+                  seasonName: 2026 Hazelnut Season
+                  productType: HAZELNUT
+                  startDate: 01.08.2026
+                  endDate: null
+
+  /seasons/{seasonId}:
+    parameters:
+      - name: seasonId
+        in: path
+        required: true
+        description: Unique identifier of the season
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+        example: 12
+
+    get:
+      summary: Retrieves a specific season
+      operationId: getSeasonById
+      responses:
+        '200':
+          description: Season retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeasonResponse'
+        '404':
+          $ref: '#/components/responses/SeasonNotFound'
+
+    put:
+      summary: Updates a specific season
+      operationId: updateSeason
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeasonRequest'
+            example:
+              seasonName: 2025 Updated Tea Season
+              productType: TEA
+              startDate: 01.05.2025
+              endDate: 15.10.2025
+      responses:
+        '200':
+          description: Season updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeasonResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/SeasonNotFound'
+
+    delete:
+      summary: Deletes a specific season
+      description: >
+        When a season is deleted, all harvest, expense, and sale records
+        linked to it are permanently deleted as well.
+      operationId: deleteSeason
+      responses:
+        '204':
+          description: Season and its related records deleted successfully
+        '404':
+          $ref: '#/components/responses/SeasonNotFound'
+
+  # ==========================================================
+  # HARVEST RECORDS
+  # ==========================================================
+  /seasons/{seasonId}/harvest-records:
+    parameters:
+      - name: seasonId
+        in: path
+        required: true
+        description: Identifier of the season the harvest records belong to
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+        example: 12
+
+    post:
+      summary: Adds a new harvest record to the specified season
+      operationId: createHarvestRecord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HarvestRecordRequest'
+            examples:
+              automaticMode:
+                summary: Automatic mode - sack weight and count are entered, total is calculated
+                value:
+                  calculationMode: AUTOMATIC
+                  productType: HAZELNUT
+                  harvestDate: 05.06.2025
+                  individualSackWeightKg: 30
+                  sackCount: 5
+                  totalWeightKg: null
+                  notes: null
+              manualMode:
+                summary: Manual mode - total weight is entered directly
+                value:
+                  calculationMode: MANUAL
+                  productType: TEA
+                  harvestDate: 05.06.2025
+                  individualSackWeightKg: null
+                  sackCount: 10
+                  totalWeightKg: 600
+                  notes: null
+      responses:
+        '201':
+          description: Harvest record created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HarvestRecordResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/SeasonNotFound'
+
+    get:
+      summary: Lists all harvest records for the specified season
+      operationId: getHarvestRecordsBySeason
+      responses:
+        '200':
+          description: Harvest records retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HarvestRecordResponse'
+              example:
+                - id: 101
+                  seasonId: 12
+                  calculationMode: AUTOMATIC
+                  productType: HAZELNUT
+                  harvestDate: 05.06.2025
+                  individualSackWeightKg: 30
+                  sackCount: 5
+                  totalWeightKg: 150.00
+                  notes: null
+                - id: 102
+                  seasonId: 12
+                  calculationMode: MANUAL
+                  productType: TEA
+                  harvestDate: 06.06.2025
+                  individualSackWeightKg: null
+                  sackCount: 10
+                  totalWeightKg: 600.00
+                  notes: null
+        '404':
+          $ref: '#/components/responses/SeasonNotFound'
+
+  /harvest-records/{harvestRecordId}:
+    parameters:
+      - name: harvestRecordId
+        in: path
+        required: true
+        description: Unique identifier of the harvest record
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+        example: 101
+
+    get:
+      summary: Retrieves a specific harvest record
+      operationId: getHarvestRecordById
+      responses:
+        '200':
+          description: Harvest record retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HarvestRecordResponse'
+        '404':
+          $ref: '#/components/responses/HarvestRecordNotFound'
+
+    put:
+      summary: Updates a specific harvest record
+      operationId: updateHarvestRecord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HarvestRecordRequest'
+            example:
+              calculationMode: AUTOMATIC
+              productType: HAZELNUT
+              harvestDate: 05.06.2025
+              individualSackWeightKg: 30
+              sackCount: 6
+              totalWeightKg: null
+              notes: null
+      responses:
+        '200':
+          description: Harvest record updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HarvestRecordResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/HarvestRecordNotFound'
+
+    delete:
+      summary: Deletes a specific harvest record
+      operationId: deleteHarvestRecord
+      responses:
+        '204':
+          description: Harvest record deleted successfully
+        '404':
+          $ref: '#/components/responses/HarvestRecordNotFound'
+
+  # ==========================================================
+  # EXPENSES
+  # ==========================================================
+  /seasons/{seasonId}/expenses:
+    parameters:
+      - name: seasonId
+        in: path
+        required: true
+        description: Identifier of the season the expense belongs to
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+        example: 12
+
+    post:
+      summary: Adds a new expense record to the specified season
+      operationId: createExpense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenseRequest'
+            examples:
+              laborExpense:
+                summary: Labor expense
+                value:
+                  expenseType: LABOR
+                  expenseDate: 16.07.2026
+                  amount: 2000
+                  description: Harvest labor
+              fertilizerExpense:
+                summary: Fertilizer expense
+                value:
+                  expenseType: FERTILIZER
+                  expenseDate: 16.07.2026
+                  amount: 500
+                  description: null
+      responses:
+        '201':
+          description: Expense record created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpenseResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/SeasonNotFound'
+
+    get:
+      summary: Lists all expense records for the specified season
+      operationId: getExpensesBySeason
+      responses:
+        '200':
+          description: Expense records retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExpenseResponse'
+              example:
+                - id: 201
+                  seasonId: 12
+                  expenseType: LABOR
+                  expenseDate: 16.07.2026
+                  amount: 2000.00
+                  description: Harvest labor
+                - id: 202
+                  seasonId: 12
+                  expenseType: FUEL
+                  expenseDate: 16.07.2026
+                  amount: 800.00
+                  description: null
+        '404':
+          $ref: '#/components/responses/SeasonNotFound'
+
+  /expenses/{expenseId}:
+    parameters:
+      - name: expenseId
+        in: path
+        required: true
+        description: Unique identifier of the expense record
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+        example: 201
+
+    get:
+      summary: Retrieves a specific expense record
+      operationId: getExpenseById
+      responses:
+        '200':
+          description: Expense record retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpenseResponse'
+        '404':
+          $ref: '#/components/responses/ExpenseNotFound'
+
+    put:
+      summary: Updates a specific expense record
+      operationId: updateExpense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenseRequest'
+            example:
+              expenseType: LABOR
+              expenseDate: 16.07.2026
+              amount: 2200
+              description: Updated labor expense
+      responses:
+        '200':
+          description: Expense record updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpenseResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/ExpenseNotFound'
+
+    delete:
+      summary: Deletes a specific expense record
+      operationId: deleteExpense
+      responses:
+        '204':
+          description: Expense record deleted successfully
+        '404':
+          $ref: '#/components/responses/ExpenseNotFound'
+
+  # ==========================================================
+  # SALES
+  # ==========================================================
+  /seasons/{seasonId}/sales:
+    parameters:
+      - name: seasonId
+        in: path
+        required: true
+        description: Identifier of the season the sale belongs to
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+        example: 12
+
+    post:
+      summary: Adds a new sale/revenue record to the specified season
+      operationId: createSale
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaleRequest'
+            example:
+              saleDate: 16.07.2026
+              productType: HAZELNUT
+              pricePerKg: 200.00
+              quantitySoldKg: 150
+              description: Sold to wholesaler
+      responses:
+        '201':
+          description: Sale record created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaleResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/SeasonNotFound'
+
+    get:
+      summary: Lists all sale records for the specified season
+      operationId: getSalesBySeason
+      responses:
+        '200':
+          description: Sale records retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SaleResponse'
+              example:
+                - id: 301
+                  seasonId: 12
+                  saleDate: 16.07.2026
+                  productType: HAZELNUT
+                  pricePerKg: 200.00
+                  quantitySoldKg: 150
+                  totalRevenue: 30000.00
+                  description: Sold to wholesaler
+        '404':
+          $ref: '#/components/responses/SeasonNotFound'
+
+  /sales/{saleId}:
+    parameters:
+      - name: saleId
+        in: path
+        required: true
+        description: Unique identifier of the sale record
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+        example: 301
+
+    get:
+      summary: Retrieves a specific sale record
+      operationId: getSaleById
+      responses:
+        '200':
+          description: Sale record retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaleResponse'
+        '404':
+          $ref: '#/components/responses/SaleNotFound'
+
+    put:
+      summary: Updates a specific sale record
+      operationId: updateSale
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaleRequest'
+            example:
+              saleDate: 16.07.2026
+              productType: HAZELNUT
+              pricePerKg: 210.00
+              quantitySoldKg: 150
+              description: Updated sale
+      responses:
+        '200':
+          description: Sale record updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaleResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/SaleNotFound'
+
+    delete:
+      summary: Deletes a specific sale record
+      operationId: deleteSale
+      responses:
+        '204':
+          description: Sale record deleted successfully
+        '404':
+          $ref: '#/components/responses/SaleNotFound'
+
+  # ==========================================================
+  # DASHBOARD
+  # ==========================================================
+  /seasons/{seasonId}/dashboard:
+    parameters:
+      - name: seasonId
+        in: path
+        required: true
+        description: Identifier of the season to summarize
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+        example: 12
+
+    get:
+      summary: Retrieves the summary dashboard for a specific season
+      description: >
+        Aggregates all harvest, expense, and sale records for the season
+        into a single summary: total harvest weight, total expenses,
+        total revenue, and net profit (or loss).
+      operationId: getSeasonDashboard
+      responses:
+        '200':
+          description: Dashboard summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+              example:
+                seasonId: 12
+                totalHarvestWeightKg: 1250.00
+                totalExpenseAmount: 12500.00
+                totalRevenueAmount: 28000.00
+                netProfit: 15500.00
+        '404':
+          $ref: '#/components/responses/SeasonNotFound'
+
+components:
+  schemas:
+    # ---------- Seasons ----------
+    ProductType:
+      type: string
+      description: Product type
+      enum:
+        - TEA
+        - HAZELNUT
+      example: TEA
+
+    SeasonRequest:
+      type: object
+      required:
+        - seasonName
+        - productType
+        - startDate
+      properties:
+        seasonName:
+          type: string
+          description: Season name chosen by the user
+          minLength: 1
+          maxLength: 150
+          example: 2025 First Flush Tea Season
+        productType:
+          $ref: '#/components/schemas/ProductType'
+        startDate:
+          type: string
+          description: Season start date. Format is Day.Month.Year.
+          pattern: '^(0[1-9]|[12][0-9]|3[01])\.(0[1-9]|1[0-2])\.[0-9]{4}$'
+          example: 01.05.2025
+        endDate:
+          type: string
+          nullable: true
+          description: >
+            Season end date. Not required; may be null if unknown.
+            If provided, it cannot be earlier than the start date.
+          pattern: '^(0[1-9]|[12][0-9]|3[01])\.(0[1-9]|1[0-2])\.[0-9]{4}$'
+          example: 30.09.2025
+
+    SeasonResponse:
+      allOf:
+        - type: object
+          required:
+            - id
+          properties:
+            id:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 12
+        - $ref: '#/components/schemas/SeasonRequest'
+
+    # ---------- Harvest Records ----------
+    CalculationMode:
+      type: string
+      description: >
+        How the total weight is determined. AUTOMATIC: the system
+        calculates it as individualSackWeightKg × sackCount. MANUAL:
+        the user enters totalWeightKg directly.
+      enum:
+        - AUTOMATIC
+        - MANUAL
+      example: AUTOMATIC
+
+    HarvestRecordRequest:
+      type: object
+      required:
+        - calculationMode
+        - harvestDate
+        - productType
+      properties:
+        calculationMode:
+          $ref: '#/components/schemas/CalculationMode'
+        productType:
+          $ref: '#/components/schemas/ProductType'
+        harvestDate:
+          type: string
+          description: Harvest date. Format is Day.Month.Year.
+          pattern: '^(0[1-9]|[12][0-9]|3[01])\.(0[1-9]|1[0-2])\.[0-9]{4}$'
+          example: 05.06.2025
+        individualSackWeightKg:
+          type: number
+          format: double
+          nullable: true
+          description: >
+            Required in AUTOMATIC mode: the weight of a single sack in kg.
+            Not used in MANUAL mode, left null.
+          minimum: 0.01
+          example: 30
+        sackCount:
+          type: integer
+          nullable: true
+          description: >
+            Required in AUTOMATIC mode and used in the calculation.
+            Optional in MANUAL mode, informational only
+            (e.g. "10 sacks"), not used in the calculation.
+          minimum: 1
+          example: 5
+        totalWeightKg:
+          type: number
+          format: double
+          nullable: true
+          description: >
+            Required in MANUAL mode; the user enters the total weight
+            directly (e.g. 600 kg). Ignored in AUTOMATIC mode, where the
+            system calculates it itself.
+          minimum: 0.01
+          example: 600
+        notes:
+          type: string
+          nullable: true
+          description: Free-text note about the harvest
+          maxLength: 500
+          example: null
+
+    HarvestRecordResponse:
+      allOf:
+        - type: object
+          required:
+            - id
+            - seasonId
+            - totalWeightKg
+          properties:
+            id:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 101
+            seasonId:
+              type: integer
+              format: int64
+              description: Identifier of the season this record belongs to
+              example: 12
+            totalWeightKg:
+              type: number
+              format: double
+              description: >
+                The final total weight (kg). Calculated by the system in
+                AUTOMATIC mode, entered by the user in MANUAL mode.
+              example: 150.00
+        - $ref: '#/components/schemas/HarvestRecordRequest'
+
+    # ---------- Expenses ----------
+    ExpenseType:
+      type: string
+      description: Expense type
+      enum:
+        - LABOR
+        - FERTILIZER
+        - PESTICIDE
+        - FUEL
+        - OTHER
+      example: LABOR
+
+    ExpenseRequest:
+      type: object
+      required:
+        - expenseType
+        - expenseDate
+        - amount
+      properties:
+        expenseType:
+          $ref: '#/components/schemas/ExpenseType'
+        expenseDate:
+          type: string
+          description: Expense date. Format is Day.Month.Year.
+          pattern: '^(0[1-9]|[12][0-9]|3[01])\.(0[1-9]|1[0-2])\.[0-9]{4}$'
+          example: 16.07.2026
+        amount:
+          type: number
+          format: double
+          description: Expense amount (₺)
+          minimum: 0.01
+          example: 2000
+        description:
+          type: string
+          nullable: true
+          description: Free-text description of the expense. Optional.
+          maxLength: 500
+          example: Harvest labor
+
+    ExpenseResponse:
+      allOf:
+        - type: object
+          required:
+            - id
+            - seasonId
+          properties:
+            id:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 201
+            seasonId:
+              type: integer
+              format: int64
+              description: Identifier of the season this record belongs to
+              example: 12
+        - $ref: '#/components/schemas/ExpenseRequest'
+
+    # ---------- Sales ----------
+    SaleRequest:
+      type: object
+      required:
+        - saleDate
+        - productType
+        - pricePerKg
+        - quantitySoldKg
+      properties:
+        saleDate:
+          type: string
+          description: Sale date. Format is Day.Month.Year.
+          pattern: '^(0[1-9]|[12][0-9]|3[01])\.(0[1-9]|1[0-2])\.[0-9]{4}$'
+          example: 16.07.2026
+        productType:
+          $ref: '#/components/schemas/ProductType'
+        pricePerKg:
+          type: number
+          format: double
+          description: Price per kilogram (₺)
+          minimum: 0.01
+          example: 200.00
+        quantitySoldKg:
+          type: number
+          format: double
+          description: Quantity sold (kg)
+          minimum: 0.01
+          example: 150
+        description:
+          type: string
+          nullable: true
+          description: Free-text description of the sale. Optional.
+          maxLength: 500
+          example: Sold to wholesaler
+
+    SaleResponse:
+      allOf:
+        - type: object
+          required:
+            - id
+            - seasonId
+            - totalRevenue
+          properties:
+            id:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 301
+            seasonId:
+              type: integer
+              format: int64
+              description: Identifier of the season this record belongs to
+              example: 12
+            totalRevenue:
+              type: number
+              format: double
+              description: >
+                Total revenue calculated by the system (₺).
+                pricePerKg × quantitySoldKg.
+              example: 30000.00
+        - $ref: '#/components/schemas/SaleRequest'
+
+    # ---------- Dashboard ----------
+    DashboardResponse:
+      type: object
+      required:
+        - seasonId
+        - totalHarvestWeightKg
+        - totalExpenseAmount
+        - totalRevenueAmount
+        - netProfit
+      properties:
+        seasonId:
+          type: integer
+          format: int64
+          description: Identifier of the summarized season
+          example: 12
+        totalHarvestWeightKg:
+          type: number
+          format: double
+          description: Sum of totalWeightKg across all harvest records in the season
+          example: 1250.00
+        totalExpenseAmount:
+          type: number
+          format: double
+          description: Sum of amount across all expense records in the season (₺)
+          example: 12500.00
+        totalRevenueAmount:
+          type: number
+          format: double
+          description: Sum of totalRevenue across all sale records in the season (₺)
+          example: 28000.00
+        netProfit:
+          type: number
+          format: double
+          description: >
+            totalRevenueAmount minus totalExpenseAmount. A negative value
+            indicates a net loss for the season.
+          example: 15500.00
+
+    # ---------- Shared error schemas ----------
+    ValidationError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: The submitted data is invalid.
+        errors:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            seasonName: Season name is required.
+            sackCount: Sack count is required in AUTOMATIC mode.
+
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: Record not found.
+
+  responses:
+    BadRequest:
+      description: The submitted data is invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+
+    SeasonNotFound:
+      description: Season not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            message: Season not found.
+
+    HarvestRecordNotFound:
+      description: Harvest record not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            message: Harvest record not found.
+
+    ExpenseNotFound:
+      description: Expense record not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            message: Expense record not found.
+
+    SaleNotFound:
+      description: Sale record not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            message: Sale record not found.
