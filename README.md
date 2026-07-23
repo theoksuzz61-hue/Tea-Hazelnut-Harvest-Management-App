@@ -17,8 +17,8 @@ Producers currently track harvests, expenses, and earnings using notebooks or sp
 
 ## Documents
 
-- [Requirements](Requirement.md)
-- [User Stories](user%20story.md)
+- [Requirements](docs/requirement.md)
+- [User Stories](docs/user-story.md)
 - [Use Case Diagram](docs/use-case-diagram.md)
 - [Sequence Diagrams](docs/sequence-diagram.md)
 - [API Design (OpenAPI)](openapi.yaml) — paste the contents into [editor.swagger.io](https://editor.swagger.io) to view it interactively
